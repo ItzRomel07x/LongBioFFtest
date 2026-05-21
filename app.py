@@ -129,7 +129,7 @@ def update_bio_with_jwt(jwt_token, bio_text, region):
         elif "common" in base_url:
             host = "clientbp.common.ggbluefox.com"
         else:
-            host = "https://clientbp.ggpolarbear.com"
+            host = "clientbp.ggpolarbear.com"
         
         headers = {
             "Expect": "100-continue",
