@@ -6,15 +6,15 @@
 
 SITE_CONFIG = {
     # Site Identity
-    "site_name": "ZIICODEX",
+    "site_name": "NEXA NATION",
     "site_logo_emoji": "⚡",
     
     # Free Fire Version
     "freefire_version": "OB53",
     
     # Social Links (for popup)
-    "youtube_link": "https://www.youtube.com/@GamesOfThory",
-    "instagram_link": "https://www.instagram.com/THORYXFF",
+    "youtube_link": "https://www.youtube.com/@nexanation2.0",
+    "instagram_link": "https://www.instagram.com",
     
     # Popup Settings
     "popup_title": "⚡ JOIN THE COMMUNITY ⚡",
@@ -28,14 +28,14 @@ SITE_CONFIG = {
     "footer_text": "ZIICODEXXFF • Neon Bio Injector",   # ← comma is correct here!
     
     # Video Tutorial Links
-    "howto_video_link": "https://youtu.be/VwWdm9UFZRM",
+    "howto_video_link": "https://youtu.be/",
     "create_own_video_link": "https://github.com/thory99/FF-Long-Bio",   # ← last line, no comma
 
 
     "templates": [
   {
-    "name": "THORY SPECIAL",
-    "bio": "[B][C][I][FEA100]ㅤ ╭─⎾ Thory ⏋[FFFFFF] ↓[FF1493]IG THORYXFF[FFFFFF]↓\n╭┘▣│ᴀɪ ᴡᴏʀʟᴅ│[78CDFF]YT - GAMESOFTHORY\n[7AC279][U]└◎─┴─◎─◎[/U]┘[F5BE63]EMOTE BOT KE LIYE YT CHECK"
+    "name": "NEXA SPECIAL",
+    "bio": "[B][C][I][FEA100]ㅤ ╭─⎾ Thory ⏋[FFFFFF] ↓[FF1493]IG THORYXFF[FFFFFF]↓\n╭┘▣│ᴀɪ ᴡᴏʀʟᴅ│[78CDFF]YT - GAMESOFNEXA\n[7AC279][U]└◎─┴─◎─◎[/U]┘[F5BE63]EMOTE BOT KE LIYE YT CHECK"
   },
   {
     "name": "ATTITUDE SHAYARI",
