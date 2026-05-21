@@ -65,7 +65,7 @@ def get_region_url(region):
         "ME": "https://clientbp.common.ggbluefox.com",
         "TH": "https://clientbp.common.ggbluefox.com"
     }
-    return region_urls.get(region.upper(), "https://clientbp.ggblueshark.com")
+    return region_urls.get(region.upper(), "https://clientbp.ggpolarbear.com")
 
 def get_account_from_eat(eat_token):
     try:
