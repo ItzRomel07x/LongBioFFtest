@@ -25,7 +25,7 @@ SITE_CONFIG = {
     "default_region": "ID",
     
     # Footer
-    "footer_text": "ZIICODEXXFF • Neon Bio Injector",   # ← comma is correct here!
+    "footer_text": "NEXA NATION V1 • Neon Bio Injector",   # ← comma is correct here!
     
     # Video Tutorial Links
     "howto_video_link": "https://youtu.be/",
