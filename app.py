@@ -18,17 +18,17 @@ try:
 except ImportError:
     print("⚠ config.py not found, using defaults")
     SITE_CONFIG = {
-        "site_name": "FF BIO TOOL",
+        "site_name": "NEXA NATION FF BIO TOOL",
         "site_logo_emoji": "⚡",
         "freefire_version": "OB53",
-        "youtube_link": "https://youtube.com",
+        "youtube_link": "https://youtube.com/@nexanation2.0",
         "instagram_link": "https://instagram.com",
         "telegram_link": "https://t.me/yourchannel",
         "popup_title": "JOIN COMMUNITY",
         "popup_message": "Follow us!",
         "bio_char_limit": 280,
         "default_region": "IND",
-        "footer_text": "FF BIO TOOL",
+        "footer_text": "NEXA NATION FF BIO TOOL",
         "howto_youtube_link": "https://youtu.be/your-tutorial",
         "howto_button_text": "📺 Watch Tutorial",
         "create_own_site_link": "https://youtu.be/create-site-tutorial",
