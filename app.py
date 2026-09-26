@@ -67,59 +67,33 @@ def get_region_url(region):
     }
     return region_urls.get(region.upper(), "https://clientbp.ggpolarbear.com")
 
-def get_account_from_eat(eat_token):
-    try:
-        if '?eat=' in eat_token:
-            parsed = urllib.parse.urlparse(eat_token)
-            params = urllib.parse.parse_qs(parsed.query)
-            eat_token = params.get('eat', [eat_token])[0]
+response = requests.get(
+    EAT_API_URL,
+    params={"access_token": eat_token},
+    timeout=15
+)
 
-        elif '&eat=' in eat_token:
-            match = re.search(r'[?&]eat=([^&]+)', eat_token)
-            if match:
-                eat_token = match.group(1)
+print("STATUS:", response.status_code)
+print("URL:", response.url)
+print("RESPONSE:", response.text)
 
-        # নতুন API
-        EAT_API_URL = "https://access.killersharmabot.online/access"
+if response.status_code != 200:
+    return None, None, f"API error: HTTP {response.status_code}"
 
-        response = requests.get(
-            EAT_API_URL,
-            params={"access_token": eat_token},
-            timeout=15
-        )
+try:
+    data = response.json()
+except ValueError:
+    return None, None, f"API returned non-JSON: {response.text[:500]}"
 
-        if response.status_code != 200:
-            return None, None, f"API error: HTTP {response.status_code}"
+print("JSON:", data)
 
-        data = response.json()
-
-        if data.get('status') != 'success':
-            return None, None, f"Invalid token: {data.get('message', 'Unknown error')}"
-
-        jwt_token = data.get('token')
-
-        if not jwt_token:
-            return None, None, "No JWT token in response"
-
-        account_info = {
-            "uid": data.get('uid'),
-            "region": data.get('region', 'IND'),
-            "nickname": data.get('nickname')
-        }
-
-        return jwt_token, account_info, None
-
-    except requests.exceptions.SSLError as e:
-        return None, None, f"SSL error: {str(e)}"
-
-    except requests.exceptions.RequestException as e:
-        return None, None, f"Request error: {str(e)}"
-
-    except ValueError:
-        return None, None, "API returned invalid JSON"
-
-    except Exception as e:
-        return None, None, str(e)
+if data.get('status') != 'success':
+    return None, None, (
+        f"API rejected token. "
+        f"status={data.get('status')!r}, "
+        f"message={data.get('message')!r}, "
+        f"response={data}"
+    )
 
 
 def update_bio_with_jwt(jwt_token, bio_text, region):
