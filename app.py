@@ -111,7 +111,7 @@ def get_account_from_eat(eat_token):
 
         # API response অনুযায়ী account information
         account_info = {
-            "uid": str(data.get("uid", "")),
+            "uid": str(data.get("accountId", "")),
             "account_id": str(data.get("accountId", "")),
             "region": (
                 data.get("lockRegion")
@@ -184,9 +184,26 @@ def update_bio_with_jwt(jwt_token, bio_text, region):
             "Connection": "Keep-Alive",
             "Accept-Encoding": "gzip"
         }
-        
-        res_bio = requests.post(url_bio, headers=headers, data=encrypted_data, timeout=30)
+
+
+
+        res_bio = requests.post(
+        url_bio,
+        headers=headers,
+        data=encrypted_data,
+        timeout=30
+        )
+
+        print("\n========== BIO UPDATE DEBUG ==========")
+        print("URL:", url_bio)
+        print("STATUS:", res_bio.status_code)
+        print("RESPONSE:", res_bio.text[:2000])
+        print("CONTENT-TYPE:", res_bio.headers.get("Content-Type"))
+        print("======================================\n")
+
         return res_bio.status_code == 200
+        
+        
         
     except Exception as e:
         raise Exception(str(e))
@@ -233,30 +250,74 @@ def verify_token():
 @app.route('/api/update-bio', methods=['POST'])
 def update_bio():
     try:
-        data = request.get_json()
+        data = request.get_json(silent=True) or {}
+
         jwt_token = data.get('jwt_token')
         bio_text = data.get('bio')
         region = data.get('region')
-        
+
+        # Check JWT token
         if not jwt_token:
-            return jsonify({"success": False, "error": "Missing JWT token"}), 400
-        
+            return jsonify({
+                "success": False,
+                "error": "Missing JWT token"
+            }), 400
+
+        # Check bio text
         if not bio_text:
-            return jsonify({"success": False, "error": "Missing bio text"}), 400
-        
-        max_chars = SITE_CONFIG.get('bio_char_limit', 300)
+            return jsonify({
+                "success": False,
+                "error": "Missing bio text"
+            }), 400
+
+        # Bio character limit
+        max_chars = SITE_CONFIG.get('bio_char_limit', 50)
+
         if len(bio_text) > max_chars:
-            return jsonify({"success": False, "error": f"Bio exceeds {max_chars} characters"}), 400
-        
-        success = update_bio_with_jwt(jwt_token, bio_text, region)
-        
+            return jsonify({
+                "success": False,
+                "error": f"Bio exceeds {max_chars} characters"
+            }), 400
+
+        # Debug information
+        print("========== UPDATE REQUEST ==========")
+        print("Region:", region)
+        print("Bio length:", len(bio_text))
+        print("JWT received:", bool(jwt_token))
+        print("====================================")
+
+        # Update bio
+        success = update_bio_with_jwt(
+            jwt_token,
+            bio_text,
+            region
+        )
+
+        # Success
         if success:
-            return jsonify({"success": True, "message": "Bio updated successfully!"})
-        else:
-            return jsonify({"success": False, "error": "Bio update failed - server error"}), 400
-        
+            return jsonify({
+                "success": True,
+                "message": "Bio updated successfully!"
+            }), 200
+
+        # Remote API returned non-200
+        return jsonify({
+            "success": False,
+            "error": "Bio update failed - remote API returned non-200"
+        }), 400
+
     except Exception as e:
-        return jsonify({"success": False, "error": str(e)}), 500
+        print("UPDATE BIO ERROR:", str(e))
+
+        return jsonify({
+            "success": False,
+            "error": str(e)
+        }), 500
+
 
 if __name__ == '__main__':
-    app.run(debug=True, host='0.0.0.0', port=5000)
+    app.run(
+        debug=True,
+        host='0.0.0.0',
+        port=5000
+    )
