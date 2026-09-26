@@ -1,77 +1,40 @@
+
 from flask import Flask, request, jsonify, render_template
-from Crypto.Cipher import AES
-from Crypto.Util.Padding import pad
-from google.protobuf import descriptor as _descriptor
-from google.protobuf import descriptor_pool as _descriptor_pool
-from google.protobuf import symbol_database as _symbol_database
-from google.protobuf.internal import builder as _builder
 import requests
-import re
 import urllib.parse
 
 app = Flask(__name__)
 
-# Load configuration
+# =========================
+# CONFIG
+# =========================
+
 try:
     from config import SITE_CONFIG
     print("✓ Loaded config from config.py")
 except ImportError:
     print("⚠ config.py not found, using defaults")
+
     SITE_CONFIG = {
         "site_name": "NEXA NATION FF BIO TOOL",
         "site_logo_emoji": "⚡",
         "freefire_version": "OB55",
-        "youtube_link": "https://youtube.com/@nexanation2.0",
-        "instagram_link": "https://instagram.com",
-        "telegram_link": "https://t.me/yourchannel",
-        "popup_title": "JOIN COMMUNITY",
-        "popup_message": "Follow us!",
         "bio_char_limit": 280,
         "default_region": "IND",
-        "footer_text": "NEXA NATION FF BIO TOOL",
-        "howto_youtube_link": "https://youtu.be/your-tutorial",
-        "howto_button_text": "📺 Watch Tutorial",
-        "create_own_site_link": "https://youtu.be/create-site-tutorial",
-        "templates": [],
-        "regions": [],
-        "v_badges": [],
-        "colors": [],
-        "gradients": []
     }
 
-app.config['SITE_CONFIG'] = SITE_CONFIG
+app.config["SITE_CONFIG"] = SITE_CONFIG
 
-# Protobuf setup (same as before)
-_sym_db = _symbol_database.Default()
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\ndata.proto\"\xbb\x01\n\x04\x44\x61ta\x12\x0f\n\x07\x66ield_2\x18\x02 \x01(\x05\x12\x1e\n\x07\x66ield_5\x18\x05 \x01(\x0b\x32\r.EmptyMessage\x12\x1e\n\x07\x66ield_6\x18\x06 \x01(\x0b\x32\r.EmptyMessage\x12\x0f\n\x07\x66ield_8\x18\x08 \x01(\t\x12\x0f\n\x07\x66ield_9\x18\t \x01(\x05\x12\x1f\n\x08\x66ield_11\x18\x0b \x01(\x0b\x32\r.EmptyMessage\x12\x1f\n\x08\x66ield_12\x18\x0c \x01(\x0b\x32\r.EmptyMessage\"\x0e\n\x0c\x45mptyMessageb\x06proto3')
-_globals = globals()
-_builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
-_builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, 'data1_pb2', _globals)
 
-Data = _sym_db.GetSymbol('Data')
-EmptyMessage = _sym_db.GetSymbol('EmptyMessage')
-
-# Encryption keys
-key = bytes([89, 103, 38, 116, 99, 37, 68, 69, 117, 104, 54, 37, 90, 99, 94, 56])
-iv = bytes([54, 111, 121, 90, 68, 114, 50, 50, 69, 51, 121, 99, 104, 106, 77, 37])
-
-def get_region_url(region):
-    region_urls = {
-        "IND": "https://client.ind.freefiremobile.com",
-        "BR": "https://client.us.freefiremobile.com",
-        "US": "https://client.us.freefiremobile.com",
-        "SAC": "https://client.us.freefiremobile.com",
-        "NA": "https://client.us.freefiremobile.com",
-        "ME": "https://clientbp.common.ggbluefox.com",
-        "TH": "https://clientbp.common.ggbluefox.com"
-    }
-    return region_urls.get(region.upper(), "https://clientbp.ppmainecoonghj.com")
+# =========================
+# ACCESS TOKEN
+# =========================
 
 def get_account_from_eat(eat_token):
     try:
         eat_token = str(eat_token).strip()
 
-        # Full URL paste করলেও token বের করবে
+        # Full URL হলে token বের করা
         if "?" in eat_token:
             parsed = urllib.parse.urlparse(eat_token)
             params = urllib.parse.parse_qs(parsed.query)
@@ -81,128 +44,88 @@ def get_account_from_eat(eat_token):
             elif params.get("eat"):
                 eat_token = params["eat"][0]
 
-        # সরাসরি access API
-        EAT_API_URL = "https://access.killersharmabot.online/access"
+        api_url = "https://access.killersharmabot.online/access"
 
         response = requests.get(
-            EAT_API_URL,
+            api_url,
             params={"access_token": eat_token},
             timeout=15
         )
 
+        print("=" * 50)
         print("ACCESS API STATUS:", response.status_code)
         print("ACCESS API URL:", response.url)
+        print("ACCESS API RESPONSE:", response.text[:2000])
+        print("=" * 50)
 
         if response.status_code != 200:
-            return None, None, f"API error: HTTP {response.status_code}"
+            return None, None, f"Access API HTTP {response.status_code}"
 
         try:
-            data = response.json()
+            result = response.json()
         except ValueError:
-            return None, None, "API returned invalid JSON"
+            return None, None, "Access API returned invalid JSON"
 
-        print("ACCESS API RESPONSE KEYS:", list(data.keys()))
+        token = result.get("token")
 
-        # API সরাসরি token দেয়; status=success check করার দরকার নেই
-        jwt_token = data.get("token")
+        if not token:
+            return None, None, "Access API response does not contain token"
 
-        if not jwt_token:
-            return None, None, "API response does not contain token"
-
-        # API response অনুযায়ী account information
-        account_info = {
-            "uid": str(data.get("uid", "")),
-            "account_id": str(data.get("accountId", "")),
+        account = {
+            "uid": str(result.get("uid", "")),
+            "account_id": str(result.get("accountId", "")),
             "region": (
-                data.get("lockRegion")
-                or data.get("notiRegion")
-                or data.get("ffAntiConfigDesc", {}).get("region")
-                or data.get("ipRegion")
+                result.get("lockRegion")
+                or result.get("notiRegion")
+                or result.get("ipRegion")
                 or "IND"
             ),
-            "nickname": data.get("nickname", ""),
-            "server_url": data.get("serverUrl", ""),
-            "level": data.get("level"),
-            "platform": data.get("platform"),
-            "login_platform": data.get("login_platform")
+            "nickname": result.get("nickname", ""),
+            "server_url": result.get("serverUrl", ""),
+            "level": result.get("level"),
+            "platform": result.get("platform"),
+            "login_platform": result.get("login_platform"),
         }
 
-        if not account_info["uid"]:
-            return None, None, "API response does not contain UID"
+        if not account["uid"]:
+            return None, None, "Access API response does not contain UID"
 
-        return jwt_token, account_info, None
-
-    except requests.exceptions.SSLError as e:
-        return None, None, f"SSL error: {str(e)}"
+        return token, account, None
 
     except requests.exceptions.Timeout:
         return None, None, "Access API request timed out"
 
     except requests.exceptions.RequestException as e:
-        return None, None, f"Request error: {str(e)}"
+        return None, None, f"Access API request error: {e}"
 
     except Exception as e:
         return None, None, str(e)
 
-def update_bio_with_jwt(jwt_token, bio_text, region):
-    try:
-        base_url = get_region_url(region)
-        url_bio = f"{base_url}/UpdateSocialBasicInfo"
-        
-        data = Data()
-        data.field_2 = 17
-        data.field_5.CopyFrom(EmptyMessage())
-        data.field_6.CopyFrom(EmptyMessage())
-        data.field_8 = bio_text.replace('+', ' ')
-        data.field_9 = 1
-        data.field_11.CopyFrom(EmptyMessage())
-        data.field_12.CopyFrom(EmptyMessage())
-        
-        data_bytes = data.SerializeToString()
-        padded_data = pad(data_bytes, AES.block_size)
-        cipher = AES.new(key, AES.MODE_CBC, iv)
-        encrypted_data = cipher.encrypt(padded_data)
-        
-        if "ind" in base_url:
-            host = "client.ind.freefiremobile.com"
-        elif "us" in base_url:
-            host = "client.us.freefiremobile.com"
-        elif "common" in base_url:
-            host = "clientbp.common.ggbluefox.com"
-        else:
-            host = "clientbp.ggpolarbear.com"
-        
-        headers = {
-            "Expect": "100-continue",
-            "Authorization": f"Bearer {jwt_token}",
-            "X-Unity-Version": "2018.4.11f1",
-            "X-GA": "v1 1",
-            "ReleaseVersion": SITE_CONFIG.get('freefire_version', 'OB55'),
-            "Content-Type": "application/x-www-form-urlencoded",
-            "User-Agent": "Dalvik/2.1.0 (Linux; U; Android 11; SM-A305F Build/RP1A.200720.012)",
-            "Host": host,
-            "Connection": "Keep-Alive",
-            "Accept-Encoding": "gzip"
-        }
-        
-        res_bio = requests.post(url_bio, headers=headers, data=encrypted_data, timeout=30)
-        return res_bio.status_code == 200
-        
-    except Exception as e:
-        raise Exception(str(e))
 
-# Routes
-@app.route('/')
-@app.route('/page')
+# =========================
+# ROUTES
+# =========================
+
+@app.route("/")
+@app.route("/page")
 def index():
-    return render_template('index.html', config=SITE_CONFIG)
+    return render_template(
+        "index.html",
+        config=SITE_CONFIG
+    )
 
-@app.route('/api/verify-token', methods=['POST'])
-@app.route('/api/verify-token', methods=['POST'])
+
+# =========================
+# VERIFY TOKEN
+# =========================
+
+@app.route("/api/verify-token", methods=["POST"])
 def verify_token():
+
     try:
         data = request.get_json(silent=True) or {}
-        eat_token = data.get('eat_token')
+
+        eat_token = data.get("eat_token")
 
         if not eat_token:
             return jsonify({
@@ -210,7 +133,7 @@ def verify_token():
                 "error": "Missing access token"
             }), 400
 
-        jwt_token, account_info, error = get_account_from_eat(eat_token)
+        token, account, error = get_account_from_eat(eat_token)
 
         if error:
             return jsonify({
@@ -220,43 +143,130 @@ def verify_token():
 
         return jsonify({
             "success": True,
-            "account": account_info,
-            "jwt_token": jwt_token
-        })
+            "account": account,
+
+            # Production-এ client-এ sensitive token পাঠানো avoid করা উচিত
+            "jwt_token": token
+        }), 200
 
     except Exception as e:
+
+        print("VERIFY ERROR:", repr(e))
+
         return jsonify({
             "success": False,
-            "error": str(e)
+            "error": "Internal server error"
         }), 500
 
-@app.route('/api/update-bio', methods=['POST'])
-def update_bio():
-    try:
-        data = request.get_json()
-        jwt_token = data.get('jwt_token')
-        bio_text = data.get('bio')
-        region = data.get('region')
-        
-        if not jwt_token:
-            return jsonify({"success": False, "error": "Missing JWT token"}), 400
-        
-        if not bio_text:
-            return jsonify({"success": False, "error": "Missing bio text"}), 400
-        
-        max_chars = SITE_CONFIG.get('bio_char_limit', 300)
-        if len(bio_text) > max_chars:
-            return jsonify({"success": False, "error": f"Bio exceeds {max_chars} characters"}), 400
-        
-        success = update_bio_with_jwt(jwt_token, bio_text, region)
-        
-        if success:
-            return jsonify({"success": True, "message": "Bio updated successfully!"})
-        else:
-            return jsonify({"success": False, "error": "Bio update failed - server error"}), 400
-        
-    except Exception as e:
-        return jsonify({"success": False, "error": str(e)}), 500
 
-if __name__ == '__main__':
-    app.run(debug=True, host='0.0.0.0', port=5000)
+# =========================
+# UPDATE BIO
+# =========================
+
+@app.route("/api/update-bio", methods=["POST"])
+def update_bio():
+
+    try:
+        data = request.get_json(silent=True) or {}
+
+        bio_text = data.get("bio")
+        region = data.get("region")
+
+        # -------------------------
+        # Validation
+        # -------------------------
+
+        if not bio_text:
+            return jsonify({
+                "success": False,
+                "error": "Missing bio text"
+            }), 400
+
+        bio_text = str(bio_text)
+
+        max_chars = int(
+            SITE_CONFIG.get("bio_char_limit", 280)
+        )
+
+        if len(bio_text) > max_chars:
+            return jsonify({
+                "success": False,
+                "error": f"Bio exceeds {max_chars} characters"
+            }), 400
+
+        if not region:
+            region = SITE_CONFIG.get(
+                "default_region",
+                "IND"
+            )
+
+        # IMPORTANT:
+        # এখানে তোমার legitimate/official
+        # bio-update provider/API call বসবে.
+        #
+        # Example:
+        #
+        # result = update_bio_using_official_api(
+        #     bio=bio_text,
+        #     region=region
+        # )
+
+        return jsonify({
+            "success": False,
+            "error": "Bio update provider is not configured",
+            "details": {
+                "region": region,
+                "bio_length": len(bio_text)
+            }
+        }), 501
+
+    except requests.exceptions.Timeout:
+        return jsonify({
+            "success": False,
+            "error": "Bio update request timed out"
+        }), 504
+
+    except requests.exceptions.RequestException as e:
+
+        print("BIO REQUEST ERROR:", repr(e))
+
+        return jsonify({
+            "success": False,
+            "error": "Bio update request failed"
+        }), 502
+
+    except Exception as e:
+
+        print("BIO UPDATE ERROR:", repr(e))
+
+        return jsonify({
+            "success": False,
+            "error": "Internal server error"
+        }), 500
+
+
+# =========================
+# HEALTH CHECK
+# =========================
+
+@app.route("/api/health", methods=["GET"])
+def health():
+
+    return jsonify({
+        "success": True,
+        "server": "online"
+    }), 200
+
+
+# =========================
+# START
+# =========================
+
+if __name__ == "__main__":
+
+    app.run(
+        host="0.0.0.0",
+        port=5000,
+        debug=True
+    )
+
