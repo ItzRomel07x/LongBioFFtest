@@ -10,7 +10,7 @@ SITE_CONFIG = {
     "site_logo_emoji": "⚡",
     
     # Free Fire Version
-    "freefire_version": "OB54",
+    "freefire_version": "OB55",
     
     # Social Links (for popup)
     "youtube_link": "https://www.youtube.com/@nexanation2.0",
