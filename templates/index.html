@@ -9,7 +9,7 @@
 :root{
   --bg:#03040a;--bg2:#07080f;--bg3:#0d0e1a;--bg4:#131425;
   --bd:rgba(255,140,0,.12);--bd2:rgba(255,140,0,.28);--bd3:rgba(255,140,0,.5);
-  --acc:#ff8c00;--acc2:#ff3000;--acc3:#ffd000;
+  --acc:#ff8c00;--acc2:#ff500;--acc3:#ffd000;
   --glow:rgba(255,140,0,.5);--glow2:rgba(255,48,0,.4);
   --txt:#fff5e0;--txt2:#c4a87a;--txt3:#6b5a3e;
   --suc:#00ffaa;--err:#ff3355;
@@ -51,7 +51,7 @@ body::after{
 
 /* TOPBAR */
 .topbar{
-  position:sticky;top:0;z-index:300;
+  position:sticky;top:0;z-index:50;
   background:rgba(3,4,10,.95);
   backdrop-filter:blur(20px);
   border-bottom:1px solid var(--bd2);
@@ -97,7 +97,7 @@ body::after{
 
 /* BOTTOM NAV */
 .bnav{
-  position:fixed;bottom:0;left:0;right:0;z-index:300;
+  position:fixed;bottom:0;left:0;right:0;z-index:50;
   background:rgba(3,4,10,.97);backdrop-filter:blur(20px);
   border-top:1px solid var(--bd2);display:flex;
   padding-bottom:env(safe-area-inset-bottom)
@@ -496,7 +496,7 @@ body::after{
         <span class="badge" id="tokenBadge" style="margin-left:auto">NOT SET</span>
       </div>
 
-      <button class="btn btn-primary mb8" onclick="window.open('https://auth.garena.com/universal/oauth?platform=8&response_type=code&locale=en-SG&client_id=100067&redirect_uri=https://api.ff.garena.co.id/auth/auth/callback_n?site=https://api-discountstore.kiosgamer.gameid.garena.co.id/oauth/callback_redirect/', '_blank')">
+      <button class="btn btn-primary mb8" onclick="window.open('https://ff-eat.vercel.app/', '_blank')">
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
         GET EAT TOKEN
       </button>
@@ -531,12 +531,12 @@ body::after{
         </div>
         <div>
           <div class="section-title">Bio Text</div>
-          <div class="section-sub">Max 300 characters</div>
+          <div class="section-sub">Max 50 characters</div>
         </div>
-        <span class="badge" style="margin-left:auto">MAX 300</span>
+        <span class="badge" style="margin-left:auto">MAX 50</span>
       </div>
-      <textarea id="homeBioText" class="textarea-bio" spellcheck="false" maxlength="300" placeholder="Type your bio here…" oninput="updateHomePrev()"></textarea>
-      <div class="char-bar"><span id="homeCharCount">0 / 300</span></div>
+      <textarea id="homeBioText" class="textarea-bio" spellcheck="false" maxlength="50" placeholder="Type your bio here…" oninput="updateHomePrev()"></textarea>
+      <div class="char-bar"><span id="homeCharCount">0 / 50</span></div>
     </div>
 
     <!-- PREVIEW CARD -->
@@ -588,8 +588,8 @@ body::after{
         <button class="fmt-btn" onclick="ins('[c]')">C</button>
         <button class="fmt-btn" onclick="ins('[/c]')">C/</button>
       </div>
-      <textarea id="bioText" class="textarea-bio" spellcheck="false" maxlength="300" placeholder="[b][c][FF0000]Your [FFFF00]Epic Bio…" oninput="updateEditorPrev()"></textarea>
-      <div class="char-bar"><span id="editorCharCount">0 / 300</span></div>
+      <textarea id="bioText" class="textarea-bio" spellcheck="false" maxlength="50" placeholder="[b][c][FF0000]Your [FFFF00]Epic Bio…" oninput="updateEditorPrev()"></textarea>
+      <div class="char-bar"><span id="editorCharCount">0 / 50</span></div>
     </div>
 
     <div class="card">
@@ -872,7 +872,7 @@ async function pasteToken(){
 
 function updateHomePrev(){
   let v = document.getElementById('homeBioText').value;
-  document.getElementById('homeCharCount').textContent = v.length + ' / 300';
+  document.getElementById('homeCharCount').textContent = v.length + ' / 50';
   let p = document.getElementById('homeBioPreview');
   p.innerHTML = v.trim() ? parseBio(v) : '<div class="bio-empty">Type bio above to preview…</div>';
 }
@@ -933,7 +933,7 @@ function ins(tag){
   let ta = document.getElementById('bioText');
   let s = ta.selectionStart, e = ta.selectionEnd, v = ta.value;
   let nv = v.slice(0,s) + tag + v.slice(e);
-  if(nv.length > 300){ toast('BIO TOO LONG!'); return; }
+  if(nv.length > 50){ toast('BIO TOO LONG!'); return; }
   ta.value = nv;
   ta.selectionStart = ta.selectionEnd = s + tag.length;
   ta.focus();
@@ -953,7 +953,7 @@ function clearEditor(){
 
 function updateEditorPrev(){
   let v = document.getElementById('bioText').value;
-  document.getElementById('editorCharCount').textContent = v.length + ' / 300';
+  document.getElementById('editorCharCount').textContent = v.length + ' / 50';
   let p = document.getElementById('editorBioPreview');
   p.innerHTML = v.trim() ? parseBio(v) : '<div class="bio-empty">Type above to preview…</div>';
 }
