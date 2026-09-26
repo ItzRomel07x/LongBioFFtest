@@ -65,36 +65,84 @@ def get_region_url(region):
         "ME": "https://clientbp.common.ggbluefox.com",
         "TH": "https://clientbp.common.ggbluefox.com"
     }
-    return region_urls.get(region.upper(), "https://clientbp.ggpolarbear.com")
+    return region_urls.get(region.upper(), "https://clientbp.ppmainecoonghj.com")
 
-response = requests.get(
-    EAT_API_URL,
-    params={"access_token": eat_token},
-    timeout=15
-)
+def get_account_from_eat(eat_token):
+    try:
+        eat_token = str(eat_token).strip()
 
-print("STATUS:", response.status_code)
-print("URL:", response.url)
-print("RESPONSE:", response.text)
+        # Full URL paste করলেও token বের করবে
+        if "?" in eat_token:
+            parsed = urllib.parse.urlparse(eat_token)
+            params = urllib.parse.parse_qs(parsed.query)
 
-if response.status_code != 200:
-    return None, None, f"API error: HTTP {response.status_code}"
+            if params.get("access_token"):
+                eat_token = params["access_token"][0]
+            elif params.get("eat"):
+                eat_token = params["eat"][0]
 
-try:
-    data = response.json()
-except ValueError:
-    return None, None, f"API returned non-JSON: {response.text[:500]}"
+        # সরাসরি access API
+        EAT_API_URL = "https://access.killersharmabot.online/access"
 
-print("JSON:", data)
+        response = requests.get(
+            EAT_API_URL,
+            params={"access_token": eat_token},
+            timeout=15
+        )
 
-if data.get('status') != 'success':
-    return None, None, (
-        f"API rejected token. "
-        f"status={data.get('status')!r}, "
-        f"message={data.get('message')!r}, "
-        f"response={data}"
-    )
+        print("ACCESS API STATUS:", response.status_code)
+        print("ACCESS API URL:", response.url)
 
+        if response.status_code != 200:
+            return None, None, f"API error: HTTP {response.status_code}"
+
+        try:
+            data = response.json()
+        except ValueError:
+            return None, None, "API returned invalid JSON"
+
+        print("ACCESS API RESPONSE KEYS:", list(data.keys()))
+
+        # API সরাসরি token দেয়; status=success check করার দরকার নেই
+        jwt_token = data.get("token")
+
+        if not jwt_token:
+            return None, None, "API response does not contain token"
+
+        # API response অনুযায়ী account information
+        account_info = {
+            "uid": str(data.get("uid", "")),
+            "account_id": str(data.get("accountId", "")),
+            "region": (
+                data.get("lockRegion")
+                or data.get("notiRegion")
+                or data.get("ffAntiConfigDesc", {}).get("region")
+                or data.get("ipRegion")
+                or "IND"
+            ),
+            "nickname": data.get("nickname", ""),
+            "server_url": data.get("serverUrl", ""),
+            "level": data.get("level"),
+            "platform": data.get("platform"),
+            "login_platform": data.get("login_platform")
+        }
+
+        if not account_info["uid"]:
+            return None, None, "API response does not contain UID"
+
+        return jwt_token, account_info, None
+
+    except requests.exceptions.SSLError as e:
+        return None, None, f"SSL error: {str(e)}"
+
+    except requests.exceptions.Timeout:
+        return None, None, "Access API request timed out"
+
+    except requests.exceptions.RequestException as e:
+        return None, None, f"Request error: {str(e)}"
+
+    except Exception as e:
+        return None, None, str(e)
 
 def update_bio_with_jwt(jwt_token, bio_text, region):
     try:
@@ -150,31 +198,37 @@ def index():
     return render_template('index.html', config=SITE_CONFIG)
 
 @app.route('/api/verify-token', methods=['POST'])
+@app.route('/api/verify-token', methods=['POST'])
 def verify_token():
     try:
-        data = request.get_json()
+        data = request.get_json(silent=True) or {}
         eat_token = data.get('eat_token')
-        
+
         if not eat_token:
-            return jsonify({"success": False, "error": "Missing EAT token"}), 400
-        
+            return jsonify({
+                "success": False,
+                "error": "Missing access token"
+            }), 400
+
         jwt_token, account_info, error = get_account_from_eat(eat_token)
-        
+
         if error:
-            return jsonify({"success": False, "error": error}), 400
-        
+            return jsonify({
+                "success": False,
+                "error": error
+            }), 400
+
         return jsonify({
             "success": True,
-            "account": {
-                "uid": account_info.get('uid'),
-                "region": account_info.get('region'),
-                "nickname": account_info.get('nickname')
-            },
+            "account": account_info,
             "jwt_token": jwt_token
         })
-        
+
     except Exception as e:
-        return jsonify({"success": False, "error": str(e)}), 500
+        return jsonify({
+            "success": False,
+            "error": str(e)
+        }), 500
 
 @app.route('/api/update-bio', methods=['POST'])
 def update_bio():
